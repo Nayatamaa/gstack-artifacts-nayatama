@@ -17,4 +17,9 @@ builder-profile.jsonl
 #   projects/*/question-preferences.json (per-machine UX preferences)
 #   projects/*/question-log.jsonl (audit/derivation log stays with preferences)
 #   projects/*/question-events.jsonl (same)
+projects/*/*-design-*.md
+projects/*/*-test-plan-*.md
+projects/*/*-eng-review-test-plan-*.md
 # ---- USER ADDITIONS BELOW ---- (survives re-init; above is managed)
+projects/*/designs/*/*.html
+projects/*/designs/*/*.json

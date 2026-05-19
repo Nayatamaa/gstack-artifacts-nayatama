@@ -1,0 +1,12 @@
+{
+  "source_mockup": null,
+  "source_plan": "~/.gstack/projects/garrytan-gstack/nayatama-main-design-20260508-211822.md",
+  "mode": "plan-driven",
+  "html_file": "~/.gstack/projects/nayatama/designs/operator-dashboard-20260519/finalized.html",
+  "pretext_tier": "card-grid",
+  "framework": "vanilla",
+  "iterations": 2,
+  "date": "2026-05-19T00:00:00Z",
+  "screen": "operator-dashboard",
+  "branch": "unknown"
+}

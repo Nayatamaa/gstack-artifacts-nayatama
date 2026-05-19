@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operator — AI Company OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── Design tokens ───────────────────────────────────────────── */
+  :root {
+    --bg:        #0a0a0a;
+    --surface:   #111111;
+    --surface-2: #161616;
+    --border:    #1e1e1e;
+    --border-2:  #2a2a2a;
+    --text-1:    #f0f0f0;
+    --text-2:    #8a8a8a;
+    --text-3:    #4a4a4a;
+    --green:     #22c55e;
+    --green-dim: rgba(34,197,94,.12);
+    --yellow:    #f59e0b;
+    --yellow-dim:rgba(245,158,11,.12);
+    --blue:      #3b82f6;
+    --blue-dim:  rgba(59,130,246,.12);
+    --red:       #ef4444;
+    --red-dim:   rgba(239,68,68,.12);
+    --font-ui:   'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --r:         6px;
+    --sidebar-w: 220px;
+    --nav-h:     52px;
+  }
+
+  /* ── Reset ───────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text-1); font-family: var(--font-ui); font-size: 13px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+  /* ── App shell ───────────────────────────────────────────────── */
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ── Top nav ─────────────────────────────────────────────────── */
+  .nav {
+    height: var(--nav-h);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 16px;
+    flex-shrink: 0;
+    background: var(--surface);
+    z-index: 10;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: .03em;
+    color: var(--text-1);
+    flex-shrink: 0;
+  }
+  .nav-logo-mark {
+    width: 22px; height: 22px;
+    background: var(--text-1);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo-mark svg { width: 12px; height: 12px; fill: var(--bg); }
+  .nav-divider { width: 1px; height: 20px; background: var(--border-2); flex-shrink: 0; }
+  .nav-breadcrumb { color: var(--text-2); font-size: 12px; }
+  .nav-breadcrumb span { color: var(--text-1); }
+  .nav-spacer { flex: 1; }
+  .nav-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-2);
+    font-family: var(--font-mono);
+  }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    flex-shrink: 0;
+  }
+  .status-dot.idle { background: var(--text-3); box-shadow: none; }
+  .status-dot.warn  { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+  .nav-time {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    margin-left: 8px;
+    min-width: 120px;
+    text-align: right;
+  }
+  .nav-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: white;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ── Body below nav ──────────────────────────────────────────── */
+  .body { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ─────────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background: var(--surface);
+    padding: 8px 0;
+  }
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding: 8px 16px 4px;
+    margin-top: 4px;
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 6px 14px;
+    border-radius: 4px;
+    margin: 1px 6px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: background .1s, color .1s;
+    position: relative;
+  }
+  .sidebar-item:hover { background: var(--surface-2); color: var(--text-1); }
+  .sidebar-item.active { background: var(--surface-2); color: var(--text-1); }
+  .sidebar-item.active::before {
+    content: '';
+    position: absolute; left: 0; top: 4px; bottom: 4px;
+    width: 2px; background: var(--blue); border-radius: 0 2px 2px 0;
+  }
+  .sidebar-icon { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
+  .sidebar-item.active .sidebar-icon,
+  .sidebar-item:hover .sidebar-icon { opacity: 1; }
+  .sidebar-badge {
+    margin-left: auto;
+    font-size: 10px; font-family: var(--font-mono);
+    background: var(--yellow-dim);
+    color: var(--yellow);
+    padding: 1px 6px; border-radius: 10px;
+    font-weight: 500;
+  }
+  .sidebar-badge.green { background: var(--green-dim); color: var(--green); }
+  .sidebar-badge.red { background: var(--red-dim); color: var(--red); }
+  .sidebar-spacer { flex: 1; }
+  .sidebar-footer {
+    border-top: 1px solid var(--border);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .sidebar-footer-name { font-size: 12px; font-weight: 500; color: var(--text-1); }
+  .sidebar-footer-plan { font-size: 11px; color: var(--text-3); }
+
+  /* ── Main content ─────────────────────────────────────────────── */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: var(--bg);
+  }
+
+  /* ── Page header ──────────────────────────────────────────────── */
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .page-title { font-size: 15px; font-weight: 600; color: var(--text-1); }
+  .page-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .page-actions { display: flex; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--r);
+    font-size: 12px; font-weight: 500;
+    cursor: pointer;
+    transition: background .1s;
+    border: 1px solid var(--border-2);
+    color: var(--text-2);
+    background: var(--surface);
+  }
+  .btn:hover { background: var(--surface-2); color: var(--text-1); }
+  .btn-primary {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+  }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-danger { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: var(--red); color: white; }
+  .btn-success { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .btn-success:hover { background: var(--green); color: #0a0a0a; }
+
+  /* ── Agent status row ─────────────────────────────────────────── */
+  .agents-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .agent-card:hover { border-color: var(--border-2); }
+  .agent-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .agent-name-row { display: flex; align-items: center; gap: 8px; }
+  .agent-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .agent-icon.sales { background: var(--blue-dim); }
+  .agent-icon.mktg  { background: var(--green-dim); }
+  .agent-icon.ops   { background: var(--yellow-dim); }
+  .agent-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .agent-role { font-size: 11px; color: var(--text-2); margin-top: 1px; }
+  .agent-status-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10.5px; font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .agent-status-pill.active  { background: var(--green-dim); color: var(--green); }
+  .agent-status-pill.idle    { background: var(--surface-2); color: var(--text-3); }
+  .agent-status-pill.working { background: var(--blue-dim);  color: var(--blue); }
+  .agent-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .agent-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+  .agent-stat-item { }
+  .agent-stat-val {
+    font-size: 18px; font-weight: 600; color: var(--text-1);
+    font-family: var(--font-mono);
+    line-height: 1.2;
+  }
+  .agent-stat-val.warn { color: var(--yellow); }
+  .agent-stat-val.ok { color: var(--green); }
+  .agent-stat-label { font-size: 10.5px; color: var(--text-2); margin-top: 2px; }
+
+  .agent-last-action {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-2);
+  }
+  .agent-last-action-label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-3); margin-bottom: 3px; }
+  .agent-last-action-text { color: var(--text-1); data-pretext; }
+  .agent-last-action-time { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-3); margin-top: 3px; }
+
+  /* ── HITL queue ───────────────────────────────────────────────── */
+  .hitl-section { }
+  .section-header {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 10px;
+  }
+  .section-title {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-2);
+  }
+  .section-count {
+    font-size: 10px; font-family: var(--font-mono);
+    background: var(--yellow-dim); color: var(--yellow);
+    padding: 1px 7px; border-radius: 10px;
+  }
+  .section-count.zero { background: none; color: var(--text-3); }
+
+  .hitl-card {
+    background: var(--surface);
+    border: 1px solid var(--yellow);
+    border-radius: var(--r);
+    padding: 14px 16px;
+    display: flex;
+    gap: 14px;
+  }
+  .hitl-urgency {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--yellow);
+    flex-shrink: 0;
+    align-self: stretch;
+  }
+  .hitl-body { flex: 1; min-width: 0; }
+  .hitl-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .hitl-agent-tag {
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--blue);
+    background: var(--blue-dim);
+    padding: 2px 7px; border-radius: 3px;
+  }
+  .hitl-type {
+    font-size: 10.5px; color: var(--text-2);
+  }
+  .hitl-age {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 10.5px; color: var(--text-3);
+  }
+  .hitl-action-title {
+    font-size: 13px; font-weight: 500; color: var(--text-1);
+    margin-bottom: 6px;
+    data-pretext;
+  }
+  .hitl-detail {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    font-size: 12px; line-height: 1.6;
+  }
+  .hitl-detail-row { display: flex; gap: 8px; margin-bottom: 2px; }
+  .hitl-detail-key { color: var(--text-3); min-width: 70px; flex-shrink: 0; font-family: var(--font-mono); font-size: 11px; }
+  .hitl-detail-val { color: var(--text-1); font-family: var(--font-mono); font-size: 11px; }
+  .hitl-actions { display: flex; gap: 8px; }
+  .hitl-context {
+    font-size: 11px; color: var(--text-2);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    line-height: 1.6;
+  }
+  .hitl-context-label { color: var(--text-3); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+
+  /* ── Two-column lower section ────────────────────────────────── */
+  .lower { display: grid; grid-template-columns: 1fr 360px; gap: 14px; }
+
+  /* ── Activity feed ───────────────────────────────────────────── */
+  .feed-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .feed-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .feed-body { overflow-y: auto; max-height: 320px; }
+
+  .feed-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background .1s;
+    cursor: default;
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item:hover { background: var(--surface-2); }
+  .feed-item-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    flex-shrink: 0; margin-top: 6px;
+  }
+  .feed-item-dot.success { background: var(--green); }
+  .feed-item-dot.escalated { background: var(--yellow); }
+  .feed-item-dot.failed   { background: var(--red); }
+  .feed-item-dot.pending  { background: var(--blue); }
+  .feed-item-dot.info     { background: var(--text-3); }
+  .feed-item-body { flex: 1; min-width: 0; }
+  .feed-item-title { font-size: 12.5px; color: var(--text-1); data-pretext; }
+  .feed-item-meta { display: flex; gap: 8px; align-items: center; margin-top: 3px; }
+  .feed-item-agent {
+    font-size: 10.5px; font-weight: 500;
+    padding: 1px 6px; border-radius: 3px;
+  }
+  .feed-item-agent.sales  { background: var(--blue-dim);  color: var(--blue); }
+  .feed-item-agent.mktg   { background: var(--green-dim); color: var(--green); }
+  .feed-item-agent.ops    { background: var(--yellow-dim);color: var(--yellow); }
+  .feed-item-agent.system { background: var(--surface-2); color: var(--text-3); }
+  .feed-item-outcome {
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-2);
+  }
+  .feed-item-outcome.success  { color: var(--green); }
+  .feed-item-outcome.escalated{ color: var(--yellow); }
+  .feed-item-outcome.failed   { color: var(--red); }
+  .feed-item-time { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-3); flex-shrink: 0; }
+
+  /* ── Memory panel ────────────────────────────────────────────── */
+  .memory-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .memory-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+  }
+  .memory-search {
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--border);
+    padding: 8px 14px;
+    flex-shrink: 0;
+  }
+  .memory-search-icon { color: var(--text-3); flex-shrink: 0; }
+  .memory-search input {
+    background: none; border: none; outline: none;
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--text-1); width: 100%;
+  }
+  .memory-search input::placeholder { color: var(--text-3); }
+  .memory-body { overflow-y: auto; flex: 1; }
+  .memory-entry {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .memory-entry:last-child { border-bottom: none; }
+  .memory-entry:hover { background: var(--surface-2); }
+  .memory-entry-key {
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--blue); margin-bottom: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .memory-entry-val {
+    font-size: 11.5px; color: var(--text-1);
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    data-pretext;
+  }
+  .memory-entry-footer { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+  .memory-entry-ns {
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-3);
+    background: var(--surface-2); padding: 1px 5px; border-radius: 3px;
+  }
+  .memory-entry-age {
+    font-size: 10px; font-family: var(--font-mono); color: var(--text-3);
+    margin-left: auto;
+  }
+
+  /* ── Metric strip ────────────────────────────────────────────── */
+  .metrics-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 14px;
+  }
+  .metric-val { font-size: 22px; font-weight: 600; font-family: var(--font-mono); color: var(--text-1); line-height: 1.1; }
+  .metric-val.green { color: var(--green); }
+  .metric-val.yellow { color: var(--yellow); }
+  .metric-label { font-size: 11px; color: var(--text-2); margin-top: 3px; }
+  .metric-delta { font-size: 10.5px; margin-top: 4px; font-family: var(--font-mono); }
+  .metric-delta.up { color: var(--green); }
+  .metric-delta.down { color: var(--red); }
+  .metric-delta.neutral { color: var(--text-3); }
+
+  /* ── Integration status ──────────────────────────────────────── */
+  .integrations-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .integration-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; transition: border-color .15s;
+  }
+  .integration-card:hover { border-color: var(--border-2); }
+  .integration-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    background: var(--surface-2);
+  }
+  .integration-info { flex: 1; min-width: 0; }
+  .integration-name { font-size: 12.5px; font-weight: 500; color: var(--text-1); }
+  .integration-detail { font-size: 10.5px; color: var(--text-2); margin-top: 1px; }
+  .integration-status { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+  .integration-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .integration-dot.connected { background: var(--green); box-shadow: 0 0 5px var(--green); }
+  .integration-dot.error { background: var(--red); box-shadow: 0 0 5px var(--red); }
+  .integration-dot.pending { background: var(--yellow); }
+  .integration-status-text { font-size: 10.5px; font-family: var(--font-mono); color: var(--text-2); }
+
+  /* ── Event bus log ────────────────────────────────────────────── */
+  .event-bus-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .event-entry {
+    display: flex; align-items: flex-start;
+    gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .event-entry:last-child { border-bottom: none; }
+  .event-entry:hover { background: var(--surface-2); }
+  .event-ts { color: var(--text-3); flex-shrink: 0; min-width: 44px; }
+  .event-arrow { color: var(--text-3); flex-shrink: 0; }
+  .event-from { color: var(--blue); flex-shrink: 0; }
+  .event-to   { color: var(--green); flex-shrink: 0; }
+  .event-type { color: var(--text-1); font-weight: 500; }
+  .event-payload { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+
+  /* ── Capability matrix ───────────────────────────────────────── */
+  .matrix-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .matrix-table { width: 100%; border-collapse: collapse; }
+  .matrix-table th {
+    text-align: left;
+    font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-3);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    background: var(--surface);
+  }
+  .matrix-table td {
+    padding: 9px 14px;
+    font-size: 12px;
+    color: var(--text-1);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .matrix-table tr:last-child td { border-bottom: none; }
+  .matrix-table tr:hover td { background: var(--surface-2); }
+  .matrix-agent-cell { font-weight: 500; white-space: nowrap; }
+  .matrix-agent-cell .badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 10.5px; font-weight: 600; margin-bottom: 2px; }
+  .matrix-trigger { font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+  .matrix-action { color: var(--text-1); }
+  .matrix-output { font-family: var(--font-mono); font-size: 11px; color: var(--blue); }
+  .matrix-hitl {
+    white-space: nowrap;
+    font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 3px;
+    display: inline-block;
+  }
+  .matrix-hitl.always { background: var(--yellow-dim); color: var(--yellow); }
+  .matrix-hitl.never  { background: var(--green-dim);  color: var(--green); }
+  .matrix-hitl.cond   { background: var(--blue-dim);   color: var(--blue); }
+
+  /* ── Escalation thresholds ───────────────────────────────────── */
+  .threshold-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    overflow: hidden;
+  }
+  .threshold-rule {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background .1s;
+  }
+  .threshold-rule:last-child { border-bottom: none; }
+  .threshold-rule:hover { background: var(--surface-2); }
+  .threshold-icon { font-size: 13px; flex-shrink: 0; width: 20px; text-align: center; }
+  .threshold-text { flex: 1; min-width: 0; }
+  .threshold-label { font-size: 12px; color: var(--text-1); }
+  .threshold-sub { font-size: 10.5px; color: var(--text-2); margin-top: 1px; }
+  .toggle {
+    width: 28px; height: 16px;
+    border-radius: 8px;
+    position: relative; flex-shrink: 0;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .toggle.on  { background: var(--green); }
+  .toggle.off { background: var(--border-2); }
+  .toggle-knob {
+    position: absolute; top: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: white;
+    transition: left .2s;
+  }
+  .toggle.on  .toggle-knob { left: 14px; }
+  .toggle.off .toggle-knob { left: 2px; }
+  .threshold-badge {
+    font-size: 10px; font-family: var(--font-mono);
+    padding: 1px 6px; border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .threshold-badge.escalate { background: var(--yellow-dim); color: var(--yellow); }
+  .threshold-badge.skip     { background: var(--green-dim);  color: var(--green); }
+
+  /* ── Scrollbar ───────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+  /* ── Focus ───────────────────────────────────────────────────── */
+  [contenteditable]:focus { outline: 1px solid var(--blue); border-radius: 2px; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── Top nav ──────────────────────────────────────────────── -->
+  <nav class="nav" role="navigation" aria-label="Application navigation">
+    <div class="nav-logo">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2h3v3H2V2zm5 0h3v3H7V2zm0 5h3v3H7V7zm-5 0h3v3H2V7z"/></svg>
+      </div>
+      OPERATOR
+    </div>
+    <div class="nav-divider" aria-hidden="true"></div>
+    <div class="nav-breadcrumb">Workspace <span>/ Dashboard</span></div>
+    <div class="nav-spacer"></div>
+    <div class="nav-status" aria-label="System status: all systems operational">
+      <div class="status-dot" aria-hidden="true"></div>
+      All systems operational
+    </div>
+    <div class="nav-time" id="nav-time" aria-live="polite" aria-label="Current time"></div>
+    <div class="nav-avatar" role="button" tabindex="0" aria-label="User menu">RN</div>
+  </nav>
+
+  <div class="body">
+
+    <!-- ── Sidebar ───────────────────────────────────────────── -->
+    <aside class="sidebar" role="navigation" aria-label="Main menu">
+      <div class="sidebar-section-label">Overview</div>
+      <div class="sidebar-item active" role="menuitem" tabindex="0" aria-current="page">
+        <svg class="sidebar-icon" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M1.5 1.5h5v5h-5v-5zm7 0h5v5h-5v-5zm0 7h5v5h-5v-5zm-7 0h5v5h-5v-5z" stroke="currentColor" stroke-width="1.2"/></svg>
+        Dashboard
+        <span class="sidebar-badge">1 HITL</span>
+      </div>
+
+      <div class="sidebar-section-label">Agents</div>
+      <div class="sidebar-item" role="menuitem" tabindex="0">
+        <svg class="sidebar-icon" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="4.5" r="2.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 13c0-3.038 2.462-5.5 5.5-5.5S13 9.962 13 13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Sales
+        <span class="sidebar-badge green">Active</span>
+      </div>
+      <div class="sidebar-item" role="menuitem" tabindex="0">
+        <svg class="sidebar-icon" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M2 5h11M2 10h11M7.5 2v11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Marketing
+        <span class="sidebar-badge green">Active</span>
+      </div>
+      <div class="sidebar-item" role="menuitem" tabindex="0">
+        <svg class="sidebar-icon" viewBox="0 0 15 15" fill="none" aria-hidden="true"><rect x="2" y="4" width="11" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M5 4V3a2 2 0 014 0v1" stroke="currentColor" stroke-width="1.2"/></svg>
+        Operations
+        <span class="sidebar-badge">Idle</span>
+      </div>
+
+      <div class="sidebar-section-label">System</div>
+      <div class="sidebar-item" role="menuitem" tabindex="0">
+        <svg class="sidebar-icon" viewBox="0 0 15 15" fill="none" aria-hidden="true"><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor"/><path d="M7.5 2v1.5M7.5 11.5V13M2 7.5h1.5M11.5 7.5H13" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><circle cx="7.5" cy="7.5" r="5" stroke="currentColor" stroke-width="1.2"/></svg>
+        Memory
+      </div>
+      <div class="sidebar-item" role="menuitem" tabindex="0">
+        <svg class="sidebar-icon" viewBox="0 0 15 15" fill="none" aria-hidden="true"><path d="M7.5 1.5v3M7.5 10.5v3M1.5 7.5h3M10.5 7.5h3M3.4 3.4l2.1 2.1M9.5 9.5l2.1 2.1M3.4 11.6l2.1-2.1M9.5 5.5l2.1-2.1" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Settings
+      </div>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-name">Raditya N.</div>
+        <div class="sidebar-footer-plan">Solo Operator · Phase 1</div>
+      </div>
+    </aside>
+
+    <!-- ── Main content ─────────────────────────────────────── -->
+    <main class="main" role="main">
+
+      <!-- Page header -->
+      <header class="page-header">
+        <div>
+          <div class="page-title">Command Center</div>
+          <div class="page-sub">3 agents active · 1 decision waiting · Last sync 2m ago</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn" type="button">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            New task
+          </button>
+          <button class="btn btn-primary" type="button">View memory</button>
+        </div>
+      </header>
+
+      <!-- Metric strip -->
+      <section class="metrics-row" aria-label="Weekly performance summary">
+        <div class="metric-card">
+          <div class="metric-val green">47</div>
+          <div class="metric-label">Tasks this week</div>
+          <div class="metric-delta up">↑ 12 vs last week</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">3</div>
+          <div class="metric-label">Escalations</div>
+          <div class="metric-delta neutral">6.4% escalation rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val yellow">1</div>
+          <div class="metric-label">Awaiting approval</div>
+          <div class="metric-delta neutral">Pending 8 min</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val green">94%</div>
+          <div class="metric-label">Success rate</div>
+          <div class="metric-delta up">↑ 3% vs last week</div>
+        </div>
+      </section>
+
+      <!-- Agent status cards -->
+      <section aria-label="Agent status">
+        <div class="section-header">
+          <div class="section-title">Agent Status</div>
+        </div>
+        <div class="agents-row">
+
+          <!-- Sales agent -->
+          <article class="agent-card" aria-label="Sales agent status">
+            <div class="agent-card-header">
+              <div class="agent-name-row">
+                <div class="agent-icon sales" aria-hidden="true">📊</div>
+                <div>
+                  <div class="agent-name">Sales</div>
+                  <div class="agent-role">Lead qualification · Pipeline</div>
+                </div>
+              </div>
+              <div class="agent-status-pill working" aria-label="Status: working">
+                <div class="agent-status-dot" aria-hidden="true"></div>
+                Working
+              </div>
+            </div>
+            <div class="agent-stats">
+              <div class="agent-stat-item">
+                <div class="agent-stat-val">18</div>
+                <div class="agent-stat-label">Tasks today</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val warn">1</div>
+                <div class="agent-stat-label">HITL pending</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val ok">94%</div>
+                <div class="agent-stat-label">Success rate</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val">12</div>
+                <div class="agent-stat-label">Leads scored</div>
+              </div>
+            </div>
+            <div class="agent-last-action">
+              <div class="agent-last-action-label">Last action</div>
+              <div class="agent-last-action-text" data-pretext contenteditable="true">
+                Qualified Acme Corp (score: 87). Flagged for HITL before outbound.
+              </div>
+              <div class="agent-last-action-time">8 min ago · task_e4a2c1</div>
+            </div>
+          </article>
+
+          <!-- Marketing agent -->
+          <article class="agent-card" aria-label="Marketing agent status">
+            <div class="agent-card-header">
+              <div class="agent-name-row">
+                <div class="agent-icon mktg" aria-hidden="true">📣</div>
+                <div>
+                  <div class="agent-name">Marketing</div>
+                  <div class="agent-role">Campaigns · Content · Social</div>
+                </div>
+              </div>
+              <div class="agent-status-pill active" aria-label="Status: active">
+                <div class="agent-status-dot" aria-hidden="true"></div>
+                Active
+              </div>
+            </div>
+            <div class="agent-stats">
+              <div class="agent-stat-item">
+                <div class="agent-stat-val">9</div>
+                <div class="agent-stat-label">Tasks today</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val ok">0</div>
+                <div class="agent-stat-label">HITL pending</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val ok">100%</div>
+                <div class="agent-stat-label">Success rate</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val">3</div>
+                <div class="agent-stat-label">Drafts created</div>
+              </div>
+            </div>
+            <div class="agent-last-action">
+              <div class="agent-last-action-label">Last action</div>
+              <div class="agent-last-action-text" data-pretext contenteditable="true">
+                Draft follow-up campaign for Acme Corp written to shared memory. Awaiting Sales confirmation before send.
+              </div>
+              <div class="agent-last-action-time">4 min ago · task_b8f3d9</div>
+            </div>
+          </article>
+
+          <!-- Ops agent -->
+          <article class="agent-card" aria-label="Operations agent status">
+            <div class="agent-card-header">
+              <div class="agent-name-row">
+                <div class="agent-icon ops" aria-hidden="true">⚙️</div>
+                <div>
+                  <div class="agent-name">Operations</div>
+                  <div class="agent-role">Reports · Scheduling · Admin</div>
+                </div>
+              </div>
+              <div class="agent-status-pill idle" aria-label="Status: idle">
+                <div class="agent-status-dot" aria-hidden="true"></div>
+                Idle
+              </div>
+            </div>
+            <div class="agent-stats">
+              <div class="agent-stat-item">
+                <div class="agent-stat-val">4</div>
+                <div class="agent-stat-label">Tasks today</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val ok">0</div>
+                <div class="agent-stat-label">HITL pending</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val ok">100%</div>
+                <div class="agent-stat-label">Success rate</div>
+              </div>
+              <div class="agent-stat-item">
+                <div class="agent-stat-val">6h</div>
+                <div class="agent-stat-label">Next cron</div>
+              </div>
+            </div>
+            <div class="agent-last-action">
+              <div class="agent-last-action-label">Last action</div>
+              <div class="agent-last-action-text" data-pretext contenteditable="true">
+                Daily pipeline report generated. 47 leads in tracking, 12 in active follow-up stage.
+              </div>
+              <div class="agent-last-action-time">2h ago · task_c1a7e5</div>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- HITL approval queue -->
+      <section class="hitl-section" aria-label="Decisions requiring your approval" aria-live="polite">
+        <div class="section-header">
+          <div class="section-title">Approval Queue</div>
+          <div class="section-count" role="status" aria-label="1 item awaiting approval">1 waiting</div>
+        </div>
+
+        <div class="hitl-card" role="alert" aria-label="Approval required: Sales agent outbound email">
+          <div class="hitl-urgency" aria-hidden="true"></div>
+          <div class="hitl-body">
+            <div class="hitl-meta">
+              <span class="hitl-agent-tag">Sales</span>
+              <span class="hitl-type">Outbound email — new contact</span>
+              <span class="hitl-age" aria-label="Waiting 8 minutes">8 min ago</span>
+            </div>
+            <div class="hitl-action-title" data-pretext>
+              Send introductory email to John Smith, Head of Engineering at Acme Corp
+            </div>
+            <div class="hitl-detail" role="region" aria-label="Action details">
+              <div class="hitl-detail-row">
+                <span class="hitl-detail-key">to:</span>
+                <span class="hitl-detail-val">john.smith@acmecorp.com</span>
+              </div>
+              <div class="hitl-detail-row">
+                <span class="hitl-detail-key">subject:</span>
+                <span class="hitl-detail-val">Re: developer tooling at Acme — worth a quick chat?</span>
+              </div>
+              <div class="hitl-detail-row">
+                <span class="hitl-detail-key">trigger:</span>
+                <span class="hitl-detail-val">lead_qualified event · score 87 · tag: enterprise</span>
+              </div>
+              <div class="hitl-detail-row">
+                <span class="hitl-detail-key">via:</span>
+                <span class="hitl-detail-val">Gmail · radityanayatama@gmail.com</span>
+              </div>
+            </div>
+            <div class="hitl-context" role="region" aria-label="Agent reasoning">
+              <div class="hitl-context-label">Agent reasoning</div>
+              Lead scored 87/100. Signals: 3 pageviews on pricing page, GitHub org has 40+ engineers, Series B announced last month. First contact with this domain — escalated per HITL policy (rule: outbound to new contact).
+            </div>
+            <div class="hitl-actions" role="group" aria-label="Approval actions">
+              <button class="btn btn-success" type="button" aria-label="Approve and send email">✓ Approve &amp; send</button>
+              <button class="btn" type="button" aria-label="Edit email before sending">Edit draft</button>
+              <button class="btn btn-danger" type="button" aria-label="Reject this action">✕ Reject</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity feed + Memory panel -->
+      <div class="lower">
+
+        <!-- Activity feed -->
+        <section aria-label="Recent activity">
+          <div class="section-header">
+            <div class="section-title">Activity</div>
+            <div class="section-count zero">Today · 47 tasks</div>
+          </div>
+          <div class="feed-card">
+            <div class="feed-header" aria-hidden="true">
+              <span style="color:var(--text-2);font-size:11px;font-weight:500;">Recent</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);">task_id · outcome</span>
+            </div>
+            <div class="feed-body" role="log" aria-label="Task activity log" aria-live="polite">
+
+              <div class="feed-item">
+                <div class="feed-item-dot pending" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>Outbound email to John Smith — awaiting approval</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent sales">Sales</span>
+                    <span class="feed-item-outcome">escalated</span>
+                    <span class="feed-item-time">8m</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot success" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>Campaign draft for Acme Corp written to memory</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent mktg">Marketing</span>
+                    <span class="feed-item-outcome success">success</span>
+                    <span class="feed-item-time">4m</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot success" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>Acme Corp qualified: score 87, tags enterprise/saas</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent sales">Sales</span>
+                    <span class="feed-item-outcome success">success</span>
+                    <span class="feed-item-time">8m</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot success" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>Content calendar draft for Q3 written to memory</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent mktg">Marketing</span>
+                    <span class="feed-item-outcome success">success</span>
+                    <span class="feed-item-time">43m</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot info" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>Daily pipeline report: 47 leads, 12 active follow-ups</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent ops">Ops</span>
+                    <span class="feed-item-outcome success">success</span>
+                    <span class="feed-item-time">2h</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot success" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>TechFlow Inc. qualified: score 72, tags smb/growth</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent sales">Sales</span>
+                    <span class="feed-item-outcome success">success</span>
+                    <span class="feed-item-time">3h</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot success" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>Weekly pipeline summary sent to shared memory</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent sales">Sales</span>
+                    <span class="feed-item-outcome success">success</span>
+                    <span class="feed-item-time">4h</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="feed-item">
+                <div class="feed-item-dot info" aria-hidden="true"></div>
+                <div class="feed-item-body">
+                  <div class="feed-item-title" data-pretext>System: HNSW index rebuilt with 847 vectors</div>
+                  <div class="feed-item-meta">
+                    <span class="feed-item-agent system">System</span>
+                    <span class="feed-item-outcome">info</span>
+                    <span class="feed-item-time">6h</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- Shared memory panel -->
+        <section aria-label="Shared memory">
+          <div class="section-header">
+            <div class="section-title">Shared Memory</div>
+            <div class="section-count zero">847 vectors</div>
+          </div>
+          <div class="memory-card">
+            <div class="memory-header" aria-hidden="true">
+              <span style="color:var(--text-2);font-size:11px;font-weight:500;">Recent writes</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);">HNSW · 384d</span>
+            </div>
+            <div class="memory-search" role="search" aria-label="Search shared memory">
+              <svg class="memory-search-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.2"/><path d="M8 8l2.5 2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              <input type="search" placeholder="Semantic search..." aria-label="Search memory">
+            </div>
+            <div class="memory-body" role="list" aria-label="Recent memory entries">
+
+              <div class="memory-entry" role="listitem" tabindex="0">
+                <div class="memory-entry-key">sales:lead:acme_corp:e4a2c1</div>
+                <div class="memory-entry-val" data-pretext>Score: 87. Tags: enterprise, saas. Next step: outbound intro email (HITL pending).</div>
+                <div class="memory-entry-footer">
+                  <span class="memory-entry-ns">sales</span>
+                  <span class="memory-entry-age">8m ago</span>
+                </div>
+              </div>
+
+              <div class="memory-entry" role="listitem" tabindex="0">
+                <div class="memory-entry-key">mktg:campaign:acme_corp:b8f3d9</div>
+                <div class="memory-entry-val" data-pretext>Draft: "Re: developer tooling at Acme" — 3-email nurture sequence, Week 1 focus on pain + social proof.</div>
+                <div class="memory-entry-footer">
+                  <span class="memory-entry-ns">marketing</span>
+                  <span class="memory-entry-age">4m ago</span>
+                </div>
+              </div>
+
+              <div class="memory-entry" role="listitem" tabindex="0">
+                <div class="memory-entry-key">mktg:content:calendar:q3_2026</div>
+                <div class="memory-entry-val" data-pretext>12 posts, 3 themes: memory-powered AI, solo operator productivity, agent coordination patterns.</div>
+                <div class="memory-entry-footer">
+                  <span class="memory-entry-ns">marketing</span>
+                  <span class="memory-entry-age">43m ago</span>
+                </div>
+              </div>
+
+              <div class="memory-entry" role="listitem" tabindex="0">
+                <div class="memory-entry-key">ops:report:daily:2026-05-19</div>
+                <div class="memory-entry-val" data-pretext>47 leads in pipeline. 12 active follow-ups. 3 escalations this week (6.4% rate). On track for target.</div>
+                <div class="memory-entry-footer">
+                  <span class="memory-entry-ns">ops</span>
+                  <span class="memory-entry-age">2h ago</span>
+                </div>
+              </div>
+
+              <div class="memory-entry" role="listitem" tabindex="0">
+                <div class="memory-entry-key">sales:lead:techflow:c9b2a4</div>
+                <div class="memory-entry-val" data-pretext>Score: 72. Tags: smb, growth. Next step: automated nurture via Marketing agent.</div>
+                <div class="memory-entry-footer">
+                  <span class="memory-entry-ns">sales</span>
+                  <span class="memory-entry-age">3h ago</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /lower -->
+
+      <!-- Integration status -->
+      <section aria-label="Integration status">
+        <div class="section-header">
+          <div class="section-title">Integrations</div>
+          <div class="section-count zero">4 connected</div>
+        </div>
+        <div class="integrations-row">
+
+          <div class="integration-card" tabindex="0" role="button" aria-label="Gmail integration - connected">
+            <div class="integration-icon">📧</div>
+            <div class="integration-info">
+              <div class="integration-name">Gmail</div>
+              <div class="integration-detail">radityanayatama@gmail.com · Sales outreach</div>
+            </div>
+            <div class="integration-status">
+              <div class="integration-dot connected" aria-hidden="true"></div>
+              <span class="integration-status-text">2m</span>
+            </div>
+          </div>
+
+          <div class="integration-card" tabindex="0" role="button" aria-label="Notion CRM integration - connected">
+            <div class="integration-icon">📋</div>
+            <div class="integration-info">
+              <div class="integration-name">Notion CRM</div>
+              <div class="integration-detail">Lead database · 847 records</div>
+            </div>
+            <div class="integration-status">
+              <div class="integration-dot connected" aria-hidden="true"></div>
+              <span class="integration-status-text">5m</span>
+            </div>
+          </div>
+
+          <div class="integration-card" tabindex="0" role="button" aria-label="Slack integration - connected">
+            <div class="integration-icon">💬</div>
+            <div class="integration-info">
+              <div class="integration-name">Slack</div>
+              <div class="integration-detail">HITL notifications · #operator-alerts</div>
+            </div>
+            <div class="integration-status">
+              <div class="integration-dot connected" aria-hidden="true"></div>
+              <span class="integration-status-text">1m</span>
+            </div>
+          </div>
+
+          <div class="integration-card" tabindex="0" role="button" aria-label="AgentDB memory - connected">
+            <div class="integration-icon">🧠</div>
+            <div class="integration-info">
+              <div class="integration-name">AgentDB</div>
+              <div class="integration-detail">HNSW · 847 vectors · 384d</div>
+            </div>
+            <div class="integration-status">
+              <div class="integration-dot connected" aria-hidden="true"></div>
+              <span class="integration-status-text">live</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Event bus log + Escalation thresholds -->
+      <div class="lower">
+
+        <!-- Event bus log -->
+        <section aria-label="Event bus — cross-agent events">
+          <div class="section-header">
+            <div class="section-title">Event Bus</div>
+            <div class="section-count zero">Live · pub/sub</div>
+          </div>
+          <div class="event-bus-card">
+            <div class="feed-header" aria-hidden="true">
+              <span style="color:var(--text-2);font-size:11px;font-weight:500;">Cross-agent events</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10.5px;color:var(--text-3);">AgentDB · polling 5s</span>
+            </div>
+            <div style="overflow-y:auto;max-height:260px;" role="log" aria-label="Event bus log" aria-live="polite">
+
+              <div class="event-entry">
+                <span class="event-ts">08:51</span>
+                <span class="event-from">sales</span>
+                <span class="event-arrow">→</span>
+                <span class="event-to">marketing</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-type">lead_qualified</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-payload">{ lead_id: "acme_corp", score: 87, tags: ["enterprise","saas"] }</span>
+              </div>
+
+              <div class="event-entry">
+                <span class="event-ts">08:47</span>
+                <span class="event-from">marketing</span>
+                <span class="event-arrow">→</span>
+                <span class="event-to">sales</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-type">campaign_drafted</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-payload">{ lead_id: "acme_corp", memory_key: "mktg:campaign:acme_corp:b8f3d9" }</span>
+              </div>
+
+              <div class="event-entry">
+                <span class="event-ts">08:15</span>
+                <span class="event-from">sales</span>
+                <span class="event-arrow">→</span>
+                <span class="event-to">marketing</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-type">lead_qualified</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-payload">{ lead_id: "techflow", score: 72, tags: ["smb","growth"] }</span>
+              </div>
+
+              <div class="event-entry">
+                <span class="event-ts">07:59</span>
+                <span class="event-from">ops</span>
+                <span class="event-arrow">→</span>
+                <span class="event-to">sales</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-type">report_ready</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-payload">{ report: "daily_ops", memory_key: "ops:report:daily:2026-05-19" }</span>
+              </div>
+
+              <div class="event-entry">
+                <span class="event-ts">06:02</span>
+                <span class="event-from">system</span>
+                <span class="event-arrow">→</span>
+                <span class="event-to">all</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-type">index_rebuilt</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-payload">{ vectors: 847, dimensions: 384, duration_ms: 1240 }</span>
+              </div>
+
+              <div class="event-entry">
+                <span class="event-ts">04:00</span>
+                <span class="event-from">ops</span>
+                <span class="event-arrow">→</span>
+                <span class="event-to">sales</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-type">cron_trigger</span>
+                <span style="margin:0 6px;color:var(--border-2)">|</span>
+                <span class="event-payload">{ trigger: "daily_report", schedule: "0 4 * * *" }</span>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        <!-- Escalation thresholds -->
+        <section aria-label="Escalation threshold settings">
+          <div class="section-header">
+            <div class="section-title">HITL Rules</div>
+            <div class="section-count zero">6 active</div>
+          </div>
+          <div class="threshold-card" role="list" aria-label="HITL escalation rules">
+
+            <div class="threshold-rule" role="listitem" tabindex="0" aria-label="Outbound to new contact: always escalate, enabled">
+              <div class="threshold-icon" aria-hidden="true">📨</div>
+              <div class="threshold-text">
+                <div class="threshold-label">Outbound to new contact</div>
+                <div class="threshold-sub">Any email to a domain not previously contacted</div>
+              </div>
+              <span class="threshold-badge escalate">ESCALATE</span>
+              <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Rule enabled">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="threshold-rule" role="listitem" tabindex="0" aria-label="Any spend: always escalate, enabled">
+              <div class="threshold-icon" aria-hidden="true">💳</div>
+              <div class="threshold-text">
+                <div class="threshold-label">Any spend &gt; $0</div>
+                <div class="threshold-sub">All budget commitments require approval</div>
+              </div>
+              <span class="threshold-badge escalate">ESCALATE</span>
+              <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Rule enabled">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="threshold-rule" role="listitem" tabindex="0" aria-label="Contract actions: always escalate, enabled">
+              <div class="threshold-icon" aria-hidden="true">📄</div>
+              <div class="threshold-text">
+                <div class="threshold-label">Contract creation / signature</div>
+                <div class="threshold-sub">Create, modify, or sign any contract</div>
+              </div>
+              <span class="threshold-badge escalate">ESCALATE</span>
+              <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Rule enabled">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="threshold-rule" role="listitem" tabindex="0" aria-label="Internal reports: skip HITL, enabled">
+              <div class="threshold-icon" aria-hidden="true">📊</div>
+              <div class="threshold-text">
+                <div class="threshold-label">Internal reports</div>
+                <div class="threshold-sub">Pipeline summaries, daily ops reports</div>
+              </div>
+              <span class="threshold-badge skip">SKIP</span>
+              <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Rule enabled">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="threshold-rule" role="listitem" tabindex="0" aria-label="CRM writes: skip HITL, enabled">
+              <div class="threshold-icon" aria-hidden="true">🗂️</div>
+              <div class="threshold-text">
+                <div class="threshold-label">CRM updates</div>
+                <div class="threshold-sub">Lead scores, tags, pipeline stage changes</div>
+              </div>
+              <span class="threshold-badge skip">SKIP</span>
+              <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Rule enabled">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+            <div class="threshold-rule" role="listitem" tabindex="0" aria-label="External calendar invites: always escalate, enabled">
+              <div class="threshold-icon" aria-hidden="true">📅</div>
+              <div class="threshold-text">
+                <div class="threshold-label">External calendar invite</div>
+                <div class="threshold-sub">Any invite sent outside the company</div>
+              </div>
+              <span class="threshold-badge escalate">ESCALATE</span>
+              <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Rule enabled">
+                <div class="toggle-knob"></div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </div><!-- /event bus + thresholds -->
+
+      <!-- Agent capability matrix -->
+      <section aria-label="Agent capability matrix">
+        <div class="section-header">
+          <div class="section-title">Capability Matrix</div>
+          <div class="section-count zero">Phase 1 — thin + coordination-aware</div>
+        </div>
+        <div class="matrix-card">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th style="width:100px">Agent</th>
+                <th>Trigger</th>
+                <th>Action</th>
+                <th>Output to Memory</th>
+                <th>HITL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="matrix-agent-cell">
+                  <div class="badge" style="background:var(--blue-dim);color:var(--blue)">Sales</div>
+                </td>
+                <td><span class="matrix-trigger">New lead (email/CRM webhook)</span></td>
+                <td class="matrix-action">Qualify: score, tag, categorize</td>
+                <td><span class="matrix-output">lead_id, score, tags, next_step</span></td>
+                <td><span class="matrix-hitl always">If outbound to new contact</span></td>
+              </tr>
+              <tr>
+                <td class="matrix-agent-cell">
+                  <div class="badge" style="background:var(--blue-dim);color:var(--blue)">Sales</div>
+                </td>
+                <td><span class="matrix-trigger">Pipeline review (cron, weekly)</span></td>
+                <td class="matrix-action">Generate status report</td>
+                <td><span class="matrix-output">pipeline_summary</span></td>
+                <td><span class="matrix-hitl never">Never (internal)</span></td>
+              </tr>
+              <tr>
+                <td class="matrix-agent-cell">
+                  <div class="badge" style="background:var(--green-dim);color:var(--green)">Mktg</div>
+                </td>
+                <td><span class="matrix-trigger">Sales lead_qualified event</span></td>
+                <td class="matrix-action">Draft follow-up campaign</td>
+                <td><span class="matrix-output">campaign_draft</span></td>
+                <td><span class="matrix-hitl always">Before any send</span></td>
+              </tr>
+              <tr>
+                <td class="matrix-agent-cell">
+                  <div class="badge" style="background:var(--green-dim);color:var(--green)">Mktg</div>
+                </td>
+                <td><span class="matrix-trigger">Cron (weekly)</span></td>
+                <td class="matrix-action">Generate content calendar draft</td>
+                <td><span class="matrix-output">content_calendar_draft</span></td>
+                <td><span class="matrix-hitl always">Before publishing</span></td>
+              </tr>
+              <tr>
+                <td class="matrix-agent-cell">
+                  <div class="badge" style="background:var(--yellow-dim);color:var(--yellow)">Ops</div>
+                </td>
+                <td><span class="matrix-trigger">Cron (daily 04:00)</span></td>
+                <td class="matrix-action">Generate internal status report</td>
+                <td><span class="matrix-output">daily_ops_summary</span></td>
+                <td><span class="matrix-hitl never">Never (internal)</span></td>
+              </tr>
+              <tr>
+                <td class="matrix-agent-cell">
+                  <div class="badge" style="background:var(--yellow-dim);color:var(--yellow)">Ops</div>
+                </td>
+                <td><span class="matrix-trigger">Cross-agent event</span></td>
+                <td class="matrix-action">Update scheduling / calendar</td>
+                <td><span class="matrix-output">schedule_update</span></td>
+                <td><span class="matrix-hitl always">If external calendar invite</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main><!-- /main -->
+  </div><!-- /body -->
+</div><!-- /app -->
+
+<script type="module">
+import { prepare, layout, clearCache } from './pretext.js';
+
+// ── Live clock ──────────────────────────────────────────────────
+function updateClock() {
+  const el = document.getElementById('nav-time');
+  if (!el) return;
+  const now = new Date();
+  el.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    + ' · ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+// ── Pretext: accurate text height computation ───────────────────
+const prepared = new Map();
+
+async function initPretext() {
+  await document.fonts.ready;
+
+  const elements = document.querySelectorAll('[data-pretext]');
+
+  for (const el of elements) {
+    const text = el.textContent.trim();
+    if (!text) continue;
+    const font = getComputedStyle(el).font;
+    try {
+      prepared.set(el, prepare(text, font));
+    } catch (e) {
+      // Skip elements that can't be prepared (e.g. empty or hidden)
+    }
+  }
+
+  relayout();
+}
+
+function relayout() {
+  for (const [el, handle] of prepared) {
+    const w = el.clientWidth;
+    if (w <= 0) continue;
+    const lh = parseFloat(getComputedStyle(el).lineHeight) || 18;
+    try {
+      const { height } = layout(handle, w, lh);
+      el.style.minHeight = `${height}px`;
+    } catch (e) {
+      // Layout can fail on zero-width containers; skip gracefully
+    }
+  }
+}
+
+// ── Resize-aware ────────────────────────────────────────────────
+const ro = new ResizeObserver(() => relayout());
+ro.observe(document.body);
+
+// ── contenteditable re-prepare ──────────────────────────────────
+function setupEditableWatcher(el) {
+  const mo = new MutationObserver(() => {
+    const text = el.textContent.trim();
+    if (!text) return;
+    const font = getComputedStyle(el).font;
+    try {
+      prepared.set(el, prepare(text, font));
+      relayout();
+    } catch (e) {}
+  });
+  mo.observe(el, { characterData: true, subtree: true, childList: true });
+}
+
+document.querySelectorAll('[data-pretext][contenteditable="true"]').forEach(setupEditableWatcher);
+
+initPretext();
+
+// ── Toggle switches (HITL rules) ───────────────────────────────
+document.querySelectorAll('.toggle').forEach(toggle => {
+  const flip = () => {
+    const isOn = toggle.classList.contains('on');
+    toggle.classList.toggle('on', !isOn);
+    toggle.classList.toggle('off', isOn);
+    toggle.setAttribute('aria-checked', String(!isOn));
+  };
+  toggle.addEventListener('click', e => { e.stopPropagation(); flip(); });
+  toggle.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); }
+  });
+});
+
+// ── Keyboard nav for sidebar items ─────────────────────────────
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    }
+  });
+});
+
+// ── HITL button handlers ────────────────────────────────────────
+const approveBtn = document.querySelector('.btn-success');
+const rejectBtn  = document.querySelector('.btn-danger');
+const hitlCard   = document.querySelector('.hitl-card');
+
+if (approveBtn) {
+  approveBtn.addEventListener('click', () => {
+    if (hitlCard) {
+      hitlCard.style.transition = 'opacity .3s';
+      hitlCard.style.opacity = '0';
+      setTimeout(() => {
+        hitlCard.style.display = 'none';
+        document.querySelector('.section-count').textContent = '0 waiting';
+        document.querySelector('.section-count').classList.add('zero');
+        document.querySelector('.page-sub').textContent = '3 agents active · 0 decisions waiting · Just now';
+      }, 300);
+    }
+  });
+}
+
+if (rejectBtn) {
+  rejectBtn.addEventListener('click', () => {
+    if (hitlCard) {
+      hitlCard.style.transition = 'opacity .3s';
+      hitlCard.style.opacity = '0';
+      setTimeout(() => {
+        hitlCard.style.display = 'none';
+        document.querySelector('.section-count').textContent = '0 waiting';
+        document.querySelector('.section-count').classList.add('zero');
+        document.querySelector('.page-sub').textContent = '3 agents active · 0 decisions waiting · Just now';
+      }, 300);
+    }
+  });
+}
+
+// ── Sidebar active state ────────────────────────────────────────
+document.querySelectorAll('.sidebar-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
