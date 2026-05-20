@@ -367,3 +367,31 @@ Payload schema for Sales → Marketing handoff:
 
 - You're building for yourself first. The best version of this product comes from a
   builder who uses it every day, not one building for a hypothetical user.
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | — |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 10 issues, 0 critical gaps |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
+
+**OUTSIDE VOICE:** Claude subagent — 3 cross-model tensions resolved: BaseAgent race condition (write→publish atomicity), HITL rule 4 precision (unbounded → specific), entity ID reconciliation (CRM ID as canonical source).
+
+**UNRESOLVED:** 0 decisions unresolved.
+
+**VERDICT:** ENG CLEARED — 10 issues found and resolved, 3 additional issues surfaced by outside voice and resolved. Ready to implement. Run `/ship` when done.
+
+### Review Decisions Made (2026-05-20)
+1. **Scope** — Prototype-first: 48h Sales→Marketing handoff (with HITL async) before full parallel build
+2. **Memory keys** — Hierarchical schema `{agent}/{entity_type}/{entity_id}`; CRM-assigned ID as canonical source of truth
+3. **HITL timeout** — Task moves to `ops/pending_review/{task_id}` (not cancel-and-lose)
+4. **ops_alert** — Surface in operator dashboard + daily cron digest
+5. **Concurrency cap** — 5 parallel HITL escalations max (configurable); excess queued
+6. **BaseAgent** — Abstract class with 5-step lifecycle; `publishEvent()` fires only after `memory_store()` returns success
+7. **Event bus handler** — `(event) => Promise<void>`; caught rejections route to dead-letter
+8. **Test requirements** — HITL threshold exhaustive test matrix + Sales→Marketing E2E as required artifact
+9. **HNSW latency** — `retrieval_time_ms` added to Week-1 metrics; p99 > 500ms alert threshold
+10. **HITL rule 4** — Replaced "any action affecting a human outside the company" with "direct communication to a named individual not in an existing thread"
