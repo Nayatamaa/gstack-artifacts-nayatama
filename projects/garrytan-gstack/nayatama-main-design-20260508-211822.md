@@ -240,11 +240,12 @@ This affects the 2-week coordination layer estimate — revised estimate: 3-4 we
    (e.g., 50 tasks/week handled autonomously, <5% escalation rate, zero critical errors).
    Owner: builder. Due: before end of Phase 1 internal validation period. This gates the
    Phase 1 → Phase 2 decision.
-2. **[BLOCKING]** What integrations does each agent need on day 1?
-   Sales: CRM (HubSpot/Salesforce/Notion)? Email (Gmail/Outlook)? Calendar?
-   Marketing: Social (LinkedIn/Twitter)? Email platform (Mailchimp/Sendgrid)? Analytics?
-   Ops: Slack? Notion? Internal spreadsheets?
-   Integration list must be finalized before Approach B execution begins.
+2. ~~[BLOCKING]~~ **RESOLVED 2026-05-20** — Integration list:
+   - **Sales:** HubSpot (primary CRM, canonical entity ID = HubSpot contact ID) + Notion (secondary, key data synced after write) + Gmail (inbound lead emails)
+   - **Marketing:** LinkedIn outreach (primary social channel); HubSpot sequences (email automation already exists — agent decides which sequence to trigger + drafts content)
+   - **Ops:** Notion (interaction logs, status reports); HubSpot tasks (follow-up scheduling); HubSpot pipeline (stage updates, revenue forecast)
+   - **HITL channel:** Gmail push notification + operator dashboard review panel (push for async; pull for review)
+   - **Not on day 1:** Mailchimp/SendGrid (HubSpot sequences cover email), Google Calendar (HubSpot tasks cover scheduling), Slack
 3. Escalation threshold is defined in Constraints above. Owner for updates: TBD.
    Threshold should be reviewed after first 2 weeks of internal use.
 4. Self-evolution drift prevention (minimum viable):
@@ -277,24 +278,43 @@ deployment pipeline, and external onboarding are deferred entirely.
 ## Dependencies
 
 - gstack v1.28+ (current — just upgraded)
-- Concrete integration list per department (open question #2)
+- ~~Concrete integration list per department~~ — RESOLVED 2026-05-20
+- ~~Handoff workflow spec~~ — RESOLVED 2026-05-20
 - Success metric definition before Phase 2 deployment decision
 
 ## Prerequisites (blocking before Approach B execution)
 
-1. **[BLOCKING] Integration list:** Decide which tools each agent connects to (CRM, email,
-   social, ops platform). Effort estimate cannot be finalized until this is known.
-   Owner: you. Due: before any code is written.
+1. ~~[BLOCKING]~~ **RESOLVED 2026-05-20** — Integration list. See Open Question #2 above.
 
-2. **[BLOCKING] Handoff workflow spec:** Map one real cross-department workflow step by step
-   as a human does it today. Example: "Lead comes in via email → sales rep qualifies it
-   (20 min) → sends to marketing for nurture sequence → ops logs in pipeline tracker."
-   This workflow becomes the first agent handoff spec and the validation prototype target.
-   Owner: you. Due: this week. Estimated time: 30 minutes.
+2. ~~[BLOCKING]~~ **RESOLVED 2026-05-20** — Handoff workflow spec:
+
+### Current Human Workflow: Sales → Marketing → Ops (per lead, ~50 min total)
+
+| Step | Who | What | Tool | Time |
+|------|-----|------|------|------|
+| Lead arrives | Human | Open HubSpot, review contact, score/tag (hot/warm/cold) | HubSpot | ~20 min |
+| Marketing handoff | Human | Add tag/note in HubSpot → triggers email sequence | HubSpot sequences | ~5 min |
+| LinkedIn outreach | Human | Find on LinkedIn, send connection/InMail (manual, disconnected) | LinkedIn | ~10 min |
+| Ops logging | Human | Log interaction to Notion; schedule follow-up task in HubSpot; update pipeline stage + forecast | Notion + HubSpot | ~15 min |
+
+### Agent Version: Same Flow, Automated
+
+| Step | Agent | Trigger | Action | HITL? | Time |
+|------|-------|---------|--------|-------|------|
+| Lead qualifies | Sales | HubSpot webhook (new contact) | Score 1-10, assign tags, write `sales/lead/{hubspot_id}/score` | If new contact + outbound planned | ~30s |
+| Campaign prep | Marketing | `lead_qualified` event | Decide HubSpot sequence + draft LinkedIn outreach; write `marketing/lead/{id}/campaign_draft` + `linkedin_draft` | Always (new contact outbound) | ~1 min |
+| After approval | Marketing | HITL approved | Trigger HubSpot sequence + queue LinkedIn outreach | — | ~5s |
+| Ops log | Ops | Campaign confirmed event | Log to Notion page; create HubSpot follow-up task; update pipeline stage | Never (all internal) | ~30s |
+
+**Total per lead (agent):** ~2 min processing + ~5 min human review for new contacts (vs ~50 min fully manual)
+
+**This workflow is the 48h prototype target.** Validate end-to-end before building all 3 agents in full.
 
 ## The Assignment
 
-Complete both prerequisites above. Nothing else unblocks until these exist.
+~~Complete both prerequisites above. Nothing else unblocks until these exist.~~
+
+**UNBLOCKED.** Both prerequisites resolved 2026-05-20. Start the 48h prototype (T1).
 
 The handoff workflow spec is the most important 30 minutes you'll spend on this project.
 You can't design the agents without knowing the exact human steps they're replacing.
